@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
-const api = {
+const apiWeather = {
 	key: '01185adc83d43d7d9af07df102507fd0',
 	base: 'https://api.openweathermap.org/data/2.5/',
+};
+
+const getLocation = async () => {
+	return new Promise(function (resolve, reject) {
+		navigator.geolocation.getCurrentPosition(resolve, reject);
+	});
 };
 
 function App() {
 	const [query, setQuery] = useState('');
 	const [weather, setWeather] = useState({});
 
-	const fetchData = (query) => {
-		fetch(`${api.base}weather?q=${query}&units=metric&appid=${api.key}`)
+	const fetchWeather = (lat, lon, query) => {
+		fetch(
+			`${apiWeather.base}weather?q=${query}&lat=${lat}&lon=${lon}&units=metric&appid=${apiWeather.key}`
+		)
 			.then((res) => res.json())
 			.then((result) => {
 				setWeather(result);
@@ -21,7 +29,7 @@ function App() {
 
 	const handleKeyDown = (e) => {
 		if (e.key === 'Enter') {
-			fetchData(query);
+			fetchWeather('', '', query);
 		}
 	};
 
@@ -41,13 +49,13 @@ function App() {
 			'December',
 		];
 		let days = [
+			'Sunday',
 			'Monday',
 			'Tuesday',
 			'Wednesday',
 			'Thursday',
 			'Friday',
 			'Saturday',
-			'Sunday',
 		];
 
 		let day = days[d.getDay()];
@@ -58,10 +66,11 @@ function App() {
 		return `${day} ${date} ${month} ${year}`;
 	};
 
-	// const getTemp = () => {
-	// 	console.log(Math.round(weather.main.temp));
-	// 	return `${Math.round(weather.main.temp)}°C`;
-	// };
+	useEffect(() => {
+		getLocation().then((position) => {
+			fetchWeather(position.coords.latitude, position.coords.longitude, '');
+		});
+	}, []);
 
 	return (
 		<div
@@ -73,11 +82,11 @@ function App() {
 					: 'app'
 			}>
 			<main>
-				<div className="search-box">
+				<div className="searchBox">
 					<input
 						type="text"
 						id="queryInput"
-						className="search-bar"
+						className="searchBar"
 						placeholder="Search..."
 						value={query}
 						onKeyDown={handleKeyDown}
@@ -85,18 +94,18 @@ function App() {
 				</div>
 				{typeof weather.main != 'undefined' ? (
 					<div>
-						<div className="location-box">
+						<div className="locationBox">
 							<div className="location">{`${weather.name},${weather.sys.country}`}</div>
 							<div className="date">{dateBuilder(new Date())}</div>
 						</div>
-						<div className="weather-box">
+						<div className="weatherBox">
 							{/* alt + shift + 8 for census symbol */}
 							<div className="temp">{Math.round(weather.main.temp)}°C</div>
 							<div className="weather">{`${weather.weather[0].description}`}</div>
 						</div>
 					</div>
 				) : (
-					''
+					<div className="date">loading...</div>
 				)}
 			</main>
 		</div>
